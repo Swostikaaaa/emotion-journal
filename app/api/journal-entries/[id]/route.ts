@@ -2,14 +2,10 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 import { detectEmotion } from '@/lib/emotion';
-import { extractTopics } from '@/lib/topics';
 
-// Helper to get the user ID from the session
 async function getUserId() {
   const session = await auth();
-  if (!session?.user?.id) {
-    return null;
-  }
+  if (!session?.user?.id) return null;
   return session.user.id;
 }
 
@@ -21,14 +17,10 @@ export async function GET(
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
   try {
     const { id } = await params;
     const entry = await prisma.journalEntry.findFirst({
-      where: {
-        id,
-        userId,
-      },
+      where: { id, userId },
     });
     if (!entry) {
       return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
@@ -48,10 +40,9 @@ export async function PUT(
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
   try {
     const { id } = await params;
-    const { title, content } = await request.json();
+    const { title, content, subject } = await request.json();
     if (!title || !content) {
       return NextResponse.json({ error: 'Title and content required' }, { status: 400 });
     }
@@ -65,8 +56,7 @@ export async function PUT(
     }
 
     const emotion = await detectEmotion(content);
-    const topics = extractTopics(content);
-    const topicsString = topics.join(',');
+    const topicsString = (subject && subject.trim() !== '') ? subject.trim() : 'General';
 
     const updated = await prisma.journalEntry.update({
       where: { id },
@@ -88,17 +78,14 @@ export async function DELETE(
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
   try {
     const { id } = await params;
-    // Verify ownership before deleting
     const existing = await prisma.journalEntry.findFirst({
       where: { id, userId },
     });
     if (!existing) {
       return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
     }
-
     await prisma.journalEntry.delete({ where: { id } });
     return NextResponse.json({ message: 'Deleted' });
   } catch (error) {

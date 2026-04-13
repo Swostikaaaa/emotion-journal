@@ -1,21 +1,21 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { signOut } from 'next-auth/react'
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { signOut } from 'next-auth/react';
 
 type JournalEntry = {
-  id: string
-  title: string
-  content: string
-  emotion: string
-  topics: string | null
-  createdAt: string
-}
+  id: string;
+  title: string;
+  content: string;
+  emotion: string;
+  topics: string | null;
+  createdAt: string;
+};
 
 const emotionEmoji: Record<string, string> = {
   joy: '😊', sadness: '😢', anger: '😠', fear: '😨', love: '❤️', surprise: '😲', neutral: '😐',
-}
+};
 
 const emotionColors: Record<string, string> = {
   joy: 'bg-green-100 text-green-800',
@@ -25,63 +25,79 @@ const emotionColors: Record<string, string> = {
   love: 'bg-pink-100 text-pink-800',
   surprise: 'bg-yellow-100 text-yellow-800',
   neutral: 'bg-gray-100 text-gray-800',
+};
+
+// Helper function to highlight search terms
+function highlightText(text: string, query: string): React.ReactNode {
+  if (!query.trim()) return text;
+  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escapedQuery})`, 'gi');
+  const parts = text.split(regex);
+  return parts.map((part, i) =>
+    regex.test(part) ? <mark key={i} className="bg-yellow-200 text-gray-900">{part}</mark> : part
+  );
 }
 
 export default function JournalPage() {
-  const [entries, setEntries] = useState<JournalEntry[]>([])
-  const [filterTopic, setFilterTopic] = useState<string>('all')
-  const [searchQuery, setSearchQuery] = useState<string>('')
-  const [loading, setLoading] = useState(true)
+  const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [filterTopic, setFilterTopic] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/journal-entries')
       .then(res => res.json())
       .then(setEntries)
       .catch(console.error)
-      .finally(() => setLoading(false))
-  }, [])
+      .finally(() => setLoading(false));
+  }, []);
 
   const deleteEntry = async (id: string) => {
-    if (!confirm('Delete this entry permanently?')) return
-    await fetch(`/api/journal-entries/${id}`, { method: 'DELETE' })
-    setEntries(entries.filter(e => e.id !== id))
-  }
+    if (!confirm('Delete this entry permanently?')) return;
+    await fetch(`/api/journal-entries/${id}`, { method: 'DELETE' });
+    setEntries(entries.filter(e => e.id !== id));
+  };
 
-  // Get unique topics from all entries
-  const allTopics = new Set<string>()
+  const allTopics = new Set<string>();
   entries.forEach(entry => {
     if (entry.topics) {
-      entry.topics.split(',').forEach(t => allTopics.add(t))
+      entry.topics.split(',').forEach(t => allTopics.add(t));
     }
-  })
-  const topicList = Array.from(allTopics).sort()
+  });
+  const topicList = Array.from(allTopics).sort();
 
-  // Filter entries by topic and search query
   const filteredEntries = entries.filter(entry => {
     if (filterTopic !== 'all' && (!entry.topics || !entry.topics.split(',').includes(filterTopic))) {
-      return false
+      return false;
     }
     if (searchQuery.trim() !== '') {
-      const query = searchQuery.toLowerCase()
-      const titleMatch = entry.title.toLowerCase().includes(query)
-      const contentMatch = entry.content.toLowerCase().includes(query)
-      if (!titleMatch && !contentMatch) return false
+      const query = searchQuery.toLowerCase();
+      const titleMatch = entry.title.toLowerCase().includes(query);
+      const contentMatch = entry.content.toLowerCase().includes(query);
+      if (!titleMatch && !contentMatch) return false;
     }
-    return true
-  })
+    return true;
+  });
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        {/* Header with all buttons */}
+    <main
+      className="min-h-screen py-12 px-4"
+      style={{
+        backgroundImage: "url('https://images.unsplash.com/photo-1542435503-956c469947f6?q=80&w=2070&auto=format')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
         <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
           <div className="flex gap-2">
             <Link
@@ -119,7 +135,7 @@ export default function JournalPage() {
           </div>
         </div>
 
-        {/* Title and tagline */}
+        {/* Title */}
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-3">
             My Journal
@@ -127,7 +143,7 @@ export default function JournalPage() {
           <p className="text-gray-500">Every entry is a step toward understanding yourself.</p>
         </div>
 
-        {/* Search and filter bar */}
+        {/* Search & Filter */}
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="flex-1">
             <input
@@ -139,36 +155,35 @@ export default function JournalPage() {
             />
           </div>
           <div className="flex flex-wrap gap-2 justify-center">
-            <button
-              onClick={() => setFilterTopic('all')}
-              className={`px-3 py-1 rounded-full text-sm transition ${filterTopic === 'all' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
-            >
-              All
-            </button>
-            {topicList.map(topic => (
-              <button
-                key={topic}
-                onClick={() => setFilterTopic(topic)}
-                className={`px-3 py-1 rounded-full text-sm transition ${filterTopic === topic ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
-              >
-                #{topic}
-              </button>
-            ))}
-          </div>
+  <button
+    onClick={() => setFilterTopic('all')}
+    className={`px-3 py-1 rounded-full text-sm transition ${filterTopic === 'all' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+  >
+    All
+  </button>
+</div>
         </div>
 
-        {/* Entries grid */}
-        {filteredEntries.length === 0 ? (
+        {/* Conditional content */}
+        {entries.length === 0 && (
+          <div className="text-center py-16 bg-white/60 backdrop-blur-sm rounded-2xl">
+            <p className="text-gray-500">No journal entries yet. Start writing!</p>
+          </div>
+        )}
+        {entries.length > 0 && filteredEntries.length === 0 && (
           <div className="text-center py-16 bg-white/60 backdrop-blur-sm rounded-2xl">
             <p className="text-gray-500">No entries match your search or filter.</p>
           </div>
-        ) : (
+        )}
+        {entries.length > 0 && filteredEntries.length > 0 && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredEntries.map(entry => (
               <div key={entry.id} className="bg-white rounded-2xl shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col">
                 <div className="p-5 flex-1">
                   <div className="flex justify-between items-start mb-3">
-                    <h2 className="text-xl font-bold text-gray-800 line-clamp-1">{entry.title}</h2>
+                    <h2 className="text-xl font-bold text-gray-800 line-clamp-1">
+                      {highlightText(entry.title, searchQuery)}
+                    </h2>
                     <span className={`text-sm px-2 py-0.5 rounded-full ${emotionColors[entry.emotion] || 'bg-gray-100'}`}>
                       {emotionEmoji[entry.emotion] || '😐'} {entry.emotion}
                     </span>
@@ -176,7 +191,9 @@ export default function JournalPage() {
                   <p className="text-gray-500 text-sm mb-2">
                     {new Date(entry.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                   </p>
-                  <p className="text-gray-600 line-clamp-3 mb-4">{entry.content}</p>
+                  <p className="text-gray-600 line-clamp-3 mb-4">
+                    {highlightText(entry.content, searchQuery)}
+                  </p>
                   {entry.topics && (
                     <div className="flex flex-wrap gap-2 mb-3">
                       {entry.topics.split(',').map(topic => (
@@ -195,6 +212,6 @@ export default function JournalPage() {
           </div>
         )}
       </div>
-    </div>
-  )
+    </main>
+  );
 }

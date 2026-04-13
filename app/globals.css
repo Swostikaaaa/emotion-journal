@@ -1,15 +1,24 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
   body {
-    background-image: url('https://images.unsplash.com/photo-1517842645767-c639042777db?q=80&w=2070&auto=format');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
     min-height: 100vh;
+    transition: background-image 0.2s ease-in-out;
+  }
+  main {
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   .glass-card {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(12px);
     border-radius: 2rem;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);

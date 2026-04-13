@@ -1,9 +1,7 @@
-// app/api/journal-entries/route.ts
 import { NextResponse } from 'next/server';
 import { auth } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 import { detectEmotion } from '@/lib/emotion';
-import { extractTopics } from '@/lib/topics';
 
 // Helper to get the user ID from the session
 async function getUserId() {
@@ -19,7 +17,6 @@ export async function GET() {
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
   try {
     const entries = await prisma.journalEntry.findMany({
       where: { userId },
@@ -37,23 +34,23 @@ export async function POST(request: Request) {
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
   try {
-    const { title, content } = await request.json();
+    const { title, content, subject } = await request.json();
     if (!title || !content) {
       return NextResponse.json({ error: 'Title and content required' }, { status: 400 });
     }
 
+    // Emotion detection (for the mood badge)
     const emotion = await detectEmotion(content);
-    const topics = extractTopics(content);
-    const topicsString = topics.join(',');
+    // Subject (user-provided free text) – fallback to "General"
+    const topicsString = (subject && subject.trim() !== '') ? subject.trim() : 'General';
 
     const entry = await prisma.journalEntry.create({
       data: {
         title,
         content,
         emotion,
-        topics: topicsString || null,
+        topics: topicsString,
         userId,
       },
     });

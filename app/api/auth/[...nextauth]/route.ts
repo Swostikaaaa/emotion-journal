@@ -22,9 +22,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!parsed.success) return null;
         const { username, password } = parsed.data;
         
-        // Handle demo user
         if (username === 'demo_user') {
-          // Ensure demo user exists
           let demoUser = await prisma.user.findUnique({ where: { name: 'demo_user' } });
           if (!demoUser) {
             const demoPasswordHash = await bcrypt.hash('demo123456', 10);
@@ -32,12 +30,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               data: { name: 'demo_user', password: demoPasswordHash },
             });
           }
-          // Clear all journal entries for demo user on each login
           await prisma.journalEntry.deleteMany({ where: { userId: demoUser.id } });
           return { id: demoUser.id, name: demoUser.name };
         }
         
-        // Regular user flow
         const user = await prisma.user.findUnique({ where: { name: username } });
         if (!user) return null;
         const isValid = await bcrypt.compare(password, user.password);
