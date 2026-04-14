@@ -151,7 +151,7 @@ export default function ResetPasswordPage() {
         >
           ← Back to Login
         </Link>
-        <h1 className="text-3xl font-bold text-white drop-shadow-lg mb-2">Reset Password</h1>
+        <h1 className="text-3xl font-bold text-white drop-shadow-lg mb-2 text-center">Reset Password</h1>
         <p className="text-white/80 mb-6">Create a new password for your account</p>
         <Suspense fallback={<div className="text-white">Loading...</div>}>
           <ResetPasswordForm />
