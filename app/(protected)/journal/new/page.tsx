@@ -53,25 +53,25 @@ export default function NewEntryPage() {
             ← Back to Journal
           </Link>
         <h1 className="text-3xl font-bold text-white mb-2 text-center">Write New Entry</h1>
-        <p className="text-white/70 mb-6">Capture your thoughts, feelings, and experiences.</p>
+        <p className="text-white/100 mb-3">Capture your thoughts, feelings, and experiences.</p>
 
         {error && <div className="bg-red-500/20 text-red-200 p-3 rounded-lg mb-6">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-white/80 mb-1">Title</label>
+            <label className="block text-sm font-medium text-white/100 mb-1">Title</label>
             <input
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 transition"
+              className="w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-black placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 transition"
               placeholder="What's on your mind?"
               disabled={submitting}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-white/80 mb-1">Subject (for analytics)</label>
+            <label className="block text-sm font-medium text-white/100 mb-1">Subject (for analytics)</label>
             <input
               type="text"
               value={subject}
@@ -83,12 +83,12 @@ export default function NewEntryPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-white/80 mb-1">Your Journal Entry</label>
+            <label className="block text-sm font-medium text-white/100 mb-1">Your Journal Entry</label>
             <textarea
               rows={12}
               value={content}
               onChange={e => setContent(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 transition"
+              className="w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-black placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 transition"
               placeholder="Write anything... We'll detect emotion automatically."
               disabled={submitting}
             />
