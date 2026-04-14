@@ -63,7 +63,7 @@ export default function SignupPage() {
 >
   ← Back to Home
 </Link>
-<h1 className="text-3xl font-bold text-white drop-shadow-lg mb-2" align="center">Create Account</h1>
+<h1 className="text-3xl font-bold text-white drop-shadow-lg mb-2 text-center">Create Account</h1>
         <p className="text-white/70 mb-6">Start your private journaling journey</p>
 
         {error && (

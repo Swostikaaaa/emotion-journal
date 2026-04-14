@@ -52,7 +52,7 @@ export default function NewEntryPage() {
           >
             ← Back to Journal
           </Link>
-        <h1 className="text-3xl font-bold text-white mb-2" align="center">Write New Entry</h1>
+        <h1 className="text-3xl font-bold text-white mb-2 text-center">Write New Entry</h1>
         <p className="text-white/70 mb-6">Capture your thoughts, feelings, and experiences.</p>
 
         {error && <div className="bg-red-500/20 text-red-200 p-3 rounded-lg mb-6">{error}</div>}
