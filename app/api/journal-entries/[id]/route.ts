@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
-import { detectEmotion } from '@/lib/emotion';
 
 async function getUserId() {
   const session = await auth();
-  if (!session?.user?.id) return null;
-  return session.user.id;
+  return session?.user?.id || null;
 }
 
 export async function GET(
@@ -17,19 +15,12 @@ export async function GET(
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  try {
-    const { id } = await params;
-    const entry = await prisma.journalEntry.findFirst({
-      where: { id, userId },
-    });
-    if (!entry) {
-      return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
-    }
-    return NextResponse.json(entry);
-  } catch (error) {
-    console.error('GET /api/journal-entries/[id] error:', error);
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+  const { id } = await params;
+  const entry = await prisma.journalEntry.findFirst({ where: { id, userId } });
+  if (!entry) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
+  return NextResponse.json(entry);
 }
 
 export async function PUT(
@@ -40,34 +31,28 @@ export async function PUT(
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  try {
-    const { id } = await params;
-    const { title, content, subject } = await request.json();
-    if (!title || !content) {
-      return NextResponse.json({ error: 'Title and content required' }, { status: 400 });
-    }
-
-    // First verify the entry belongs to the user
-    const existing = await prisma.journalEntry.findFirst({
-      where: { id, userId },
-    });
-    if (!existing) {
-      return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
-    }
-
-    const emotion = await detectEmotion(content);
-    const topicsString = (subject && subject.trim() !== '') ? subject.trim() : 'General';
-
-    const updated = await prisma.journalEntry.update({
-      where: { id },
-      data: { title, content, emotion, topics: topicsString, updatedAt: new Date() },
-    });
-
-    return NextResponse.json(updated);
-  } catch (error) {
-    console.error('PUT /api/journal-entries/[id] error:', error);
-    return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
+  const { id } = await params;
+  const body = await request.json();
+  const { title, content, subject, emotion } = body;
+  if (!title || !content) {
+    return NextResponse.json({ error: 'Title and content required' }, { status: 400 });
   }
+  const existing = await prisma.journalEntry.findFirst({ where: { id, userId } });
+  if (!existing) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+  const topicsString = (subject && subject.trim() !== '') ? subject.trim() : 'General';
+  const updated = await prisma.journalEntry.update({
+    where: { id },
+    data: {
+      title,
+      content,
+      emotion: emotion || 'neutral',
+      topics: topicsString,
+      updatedAt: new Date(),
+    },
+  });
+  return NextResponse.json(updated);
 }
 
 export async function DELETE(
@@ -78,18 +63,11 @@ export async function DELETE(
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  try {
-    const { id } = await params;
-    const existing = await prisma.journalEntry.findFirst({
-      where: { id, userId },
-    });
-    if (!existing) {
-      return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
-    }
-    await prisma.journalEntry.delete({ where: { id } });
-    return NextResponse.json({ message: 'Deleted' });
-  } catch (error) {
-    console.error('DELETE /api/journal-entries/[id] error:', error);
-    return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
+  const { id } = await params;
+  const existing = await prisma.journalEntry.findFirst({ where: { id, userId } });
+  if (!existing) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
+  await prisma.journalEntry.delete({ where: { id } });
+  return NextResponse.json({ message: 'Deleted' });
 }

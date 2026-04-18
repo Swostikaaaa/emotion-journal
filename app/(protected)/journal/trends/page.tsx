@@ -3,26 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
 
-type Analytics = {
-  emotionCounts: Record<string, number>;
-  topicCounts: Record<string, number>;
-  dailyData: Record<string, any>[];
-};
-
-const emotionNames: Record<string, string> = {
-  joy: 'Joy', sadness: 'Sadness', anger: 'Anger', fear: 'Fear', love: 'Love', surprise: 'Surprise', neutral: 'Neutral',
-};
-
-const emotionColors = {
-  joy: '#10b981', sadness: '#3b82f6', anger: '#ef4444', fear: '#8b5cf6', love: '#ec4899', surprise: '#f59e0b', neutral: '#6b7280',
-};
-
 export default function TrendsPage() {
-  const [data, setData] = useState<Analytics | null>(null);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,145 +19,189 @@ export default function TrendsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // 🌸 Ultra-light mental wellness background
+  const pageStyle = {
+    background: `
+      radial-gradient(circle at 20% 20%, #ede9fe 0%, transparent 40%),
+      radial-gradient(circle at 80% 30%, #fce7f3 0%, transparent 40%),
+      radial-gradient(circle at 50% 80%, #e0e7ff 0%, transparent 40%),
+      linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)
+    `
+  };
+
+  // 🫧 Glass card style (Dribbble-level soft UI)
+  const cardStyle = {
+    backgroundColor: 'rgba(255, 255, 255, 0.65)',
+    backdropFilter: 'blur(18px)',
+    border: '1px solid rgba(255,255,255,0.6)',
+    borderRadius: '24px',
+    boxShadow: '0 10px 40px rgba(99, 102, 241, 0.08)'
+  };
+
+  const COLORS = [
+    '#a78bfa', '#c4b5fd', '#f9a8d4', '#f0abfc',
+    '#93c5fd', '#86efac', '#fde68a', '#fca5a5'
+  ];
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+      <div className="min-h-screen flex items-center justify-center" style={pageStyle}>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-400"></div>
       </div>
     );
   }
 
-  // Empty state (no entries)
   if (!data || Object.keys(data.emotionCounts).length === 0) {
     return (
-      <main
-        className="min-h-screen py-12 px-4"
-        style={{
-          background: 'linear-gradient(135deg, #1e1e2f 0%, #2a2a40 100%)',
-        }}
-      >
+      <main className="min-h-screen py-12 px-4" style={pageStyle}>
         <div className="max-w-4xl mx-auto text-center">
           <Link
             href="/journal"
-            className="inline-flex items-center gap-2 bg-white text-indigo-600 border-2 border-indigo-600 px-4 py-2 rounded-full font-semibold hover:bg-indigo-50 transition mb-8"
+            className="inline-flex items-center gap-2 bg-white/70 backdrop-blur px-4 py-2 rounded-full font-semibold text-indigo-600 hover:bg-white transition mb-8"
           >
             ← Back to Journal
           </Link>
-          <div className="glass-card p-12" style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}>
-            <div className="text-6xl mb-4">📊</div>
-            <h1 className="text-3xl font-bold text-white mb-2">No Data Yet</h1>
-            <p className="text-white/90 mb-6">Write some journal entries to see your emotion and topic trends.</p>
-            <Link href="/journal/new" className="bg-white/30 hover:bg-white/40 text-white px-6 py-2 rounded-full transition">Write Your First Entry</Link>
+
+          <div className="p-14" style={cardStyle}>
+            <div className="text-6xl mb-4">🌿</div>
+            <h1 className="text-3xl font-bold text-indigo-900 mb-2">
+              Your space is empty
+            </h1>
+            <p className="text-indigo-700 mb-6">
+              Start journaling to discover your emotional patterns.
+            </p>
+            <Link
+              href="/journal/new"
+              className="bg-indigo-400 hover:bg-indigo-500 text-white px-6 py-3 rounded-full transition"
+            >
+              Write First Entry
+            </Link>
           </div>
         </div>
       </main>
     );
   }
 
-  const { emotionCounts, topicCounts, dailyData } = data;
+  const { emotionCounts, topicCounts, dailyData, weeklySummary } = data;
 
-  const emotionChartData = Object.entries(emotionCounts).map(([emotion, count]) => ({
-    name: emotionNames[emotion] || emotion,
-    count,
-    color: emotionColors[emotion as keyof typeof emotionColors] || '#8884d8',
-  }));
-
-  const topicChartData = Object.entries(topicCounts).map(([topic, count]) => ({
-    name: topic,
-    count,
-  }));
+  const emotionChart = Object.entries(emotionCounts).map(([name, count]) => ({ name, count }));
+  const topicChart = Object.entries(topicCounts).map(([name, count]) => ({ name, count }));
 
   return (
-    <main
-      className="min-h-screen py-12 px-4"
-      style={{
-        background: 'linear-gradient(135deg, #1e1e2f 0%, #2a2a40 100%)',
-      }}
-    >
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <Link
-            href="/journal"
-            className="inline-flex items-center gap-2 bg-white text-indigo-600 border-2 border-indigo-600 px-4 py-2 rounded-full font-semibold hover:bg-indigo-50 transition"
-          >
-            ← Back to Journal
-          </Link>
+    <main className="min-h-screen py-12 px-4 relative overflow-hidden" style={pageStyle}>
+      
+      {/* 🌸 Floating blobs */}
+      <div className="absolute w-72 h-72 bg-purple-200 rounded-full blur-3xl opacity-40 top-10 left-10 animate-pulse"></div>
+      <div className="absolute w-72 h-72 bg-pink-200 rounded-full blur-3xl opacity-40 bottom-10 right-10 animate-pulse"></div>
+      <div className="absolute w-72 h-72 bg-blue-200 rounded-full blur-3xl opacity-30 top-1/2 left-1/2"></div>
+
+      <div className="max-w-6xl mx-auto relative z-10">
+
+        <Link
+          href="/journal"
+          className="inline-flex items-center gap-2 bg-white/70 backdrop-blur px-4 py-2 rounded-full font-semibold text-indigo-600 hover:bg-white transition mb-8"
+        >
+          ← Back to Journal
+        </Link>
+
+        <h1 className="text-4xl font-bold text-indigo-900 text-center mb-2">
+          Your Emotional Landscape
+        </h1>
+        <p className="text-center text-indigo-700 mb-8">
+          Gentle insights into your mind 🌿
+        </p>
+
+        <div className="p-6 mb-8 text-center" style={cardStyle}>
+          <h2 className="text-xl font-semibold text-indigo-900 mb-2">
+            This Week's Snapshot
+          </h2>
+          <p className="text-indigo-700">
+            {weeklySummary?.message || "Keep journaling to see your emotional flow ✨"}
+          </p>
         </div>
 
-        <h1 className="text-4xl md:text-5xl font-bold text-white text-center mb-3 drop-shadow">Mood & Topic Analytics</h1>
-        <p className="text-center text-white/70 mb-12">See your emotional journey and what matters most to you.</p>
-
         <div className="grid md:grid-cols-2 gap-8 mb-12">
-          {/* Emotion Breakdown */}
-          <div className="glass-card p-6">
-            <h2 className="text-xl font-semibold text-white mb-2">Emotion Breakdown</h2>
-            <p className="text-white/50 text-sm mb-6">How you've been feeling lately</p>
+
+          {/* BAR CHART */}
+          <div className="p-6" style={cardStyle}>
+            <h2 className="text-lg font-semibold text-indigo-900 mb-4">
+              Emotion Breakdown
+            </h2>
+
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={emotionChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff30" />
-                <XAxis dataKey="name" tick={{ fill: '#fff' }} />
-                <YAxis tick={{ fill: '#fff' }} />
-                <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '12px' }} />
-                <Legend wrapperStyle={{ color: '#fff' }} />
-                <Bar dataKey="count" name="Entries" radius={[8,8,0,0]}>
-                  {emotionChartData.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
-                </Bar>
+              <BarChart data={emotionChart}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e9d5ff" />
+                <XAxis dataKey="name" tick={{ fill: '#6b7280' }} />
+                <YAxis tick={{ fill: '#6b7280' }} />
+                <Tooltip />
+                <Legend />
+                <Bar
+                  dataKey="count"
+                  fill="#a78bfa"
+                  radius={[10, 10, 0, 0]}
+                  isAnimationActive={true}
+                  animationDuration={900}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Top Topics - with fallback when empty */}
-          <div className="glass-card p-6">
-            <h2 className="text-xl font-semibold text-white mb-2">Top Topics</h2>
-            <p className="text-white/50 text-sm mb-6">What you write about most</p>
-            {topicChartData.length === 0 ? (
-              <div className="text-center py-12 text-white/70">
-                No topics detected yet. Try writing about specific subjects like &quot;study&quot;, &quot;work&quot;, or &quot;family&quot;.
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={topicChartData}
-                    dataKey="count"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
-                    labelLine={true}
-                  >
-                    {topicChartData.map((entry, idx) => <Cell key={idx} fill={['#6366f1', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'][idx % 5]} />)}
-                  </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none' }} />
-                  <Legend wrapperStyle={{ color: '#fff' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
+          {/* PIE CHART */}
+          <div className="p-6" style={cardStyle}>
+            <h2 className="text-lg font-semibold text-indigo-900 mb-4">
+              Top Topics
+            </h2>
+
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={topicChart}
+                  dataKey="count"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  isAnimationActive={true}
+                  animationDuration={900}
+                  label
+                >
+                  {topicChart.map((_, idx) => (
+                    <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Emotion Trends Over Time */}
-        {dailyData.length > 0 && (
-          <div className="glass-card p-6">
-            <h2 className="text-xl font-semibold text-white mb-2">Emotion Trends Over Time</h2>
-            <p className="text-white/50 text-sm mb-6">How your feelings evolve day by day</p>
+        {/* LINE CHART */}
+        {dailyData && dailyData.length > 0 && (
+          <div className="p-6" style={cardStyle}>
+            <h2 className="text-lg font-semibold text-indigo-900 mb-4">
+              Emotional Trends (30 Days)
+            </h2>
+
             <ResponsiveContainer width="100%" height={400}>
               <LineChart data={dailyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff30" />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#fff' }} tickFormatter={(v) => v?.split('-').slice(1).join('/')} />
-                <YAxis tick={{ fill: '#fff' }} />
-                <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none' }} />
-                <Legend wrapperStyle={{ color: '#fff' }} />
-                {Object.keys(emotionNames).map(emotion => (
+                <CartesianGrid strokeDasharray="3 3" stroke="#e9d5ff" />
+                <XAxis dataKey="date" tick={{ fill: '#6b7280' }} />
+                <YAxis tick={{ fill: '#6b7280' }} />
+                <Tooltip />
+                <Legend />
+
+                {Object.keys(emotionCounts).map((emotion, idx) => (
                   <Line
                     key={emotion}
                     type="monotone"
                     dataKey={emotion}
-                    name={emotionNames[emotion]}
-                    stroke={emotionColors[emotion as keyof typeof emotionColors]}
+                    stroke={COLORS[idx % COLORS.length]}
                     strokeWidth={2}
                     dot={{ r: 3 }}
+                    activeDot={{ r: 6 }}
+                    isAnimationActive={true}
+                    animationDuration={900}
                   />
                 ))}
               </LineChart>
