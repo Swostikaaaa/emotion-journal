@@ -1,3 +1,7 @@
+// app/settings/page.tsx
+// This page allows authenticated users to change their password or delete their account.
+// It includes password visibility toggles and special handling for the demo user.
+
 'use client';
 
 import { useState } from 'react';
@@ -7,15 +11,21 @@ import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 
 export default function SettingsPage() {
-  const { data: session } = useSession();
+  const { data: session } = useSession(); // Get current user session
   const router = useRouter();
+
+  // State for password change form
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // State for account deletion
   const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  // Visibility toggles for password fields
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -24,8 +34,11 @@ export default function SettingsPage() {
 
   const isDemoUser = session?.user?.name === 'demo_user';
 
+  // Handle password change form submission
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate input
     if (newPassword !== confirmPassword) {
       setError('New passwords do not match.');
       return;
@@ -34,10 +47,13 @@ export default function SettingsPage() {
       setError('Password must be at least 6 characters.');
       return;
     }
+
     setIsChangingPassword(true);
     setError('');
     setMessage('');
+
     try {
+      // Call API to change password
       const res = await fetch('/api/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -45,7 +61,9 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to change password');
+
       setMessage('Password changed successfully!');
+      // Clear form fields
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -56,7 +74,9 @@ export default function SettingsPage() {
     }
   };
 
+  // Handle account deletion
   const handleDeleteAccount = async () => {
+    // Prevent deletion of demo user
     if (isDemoUser) {
       setError('Demo account cannot be deleted.');
       return;
@@ -65,13 +85,16 @@ export default function SettingsPage() {
       setError('Please enter your password to confirm deletion.');
       return;
     }
+
     const confirmed = confirm('Are you sure you want to delete your account? This action is permanent and will erase all your journal entries.');
     if (!confirmed) return;
 
     setIsDeleting(true);
     setError('');
     setMessage('');
+
     try {
+      // Call API to delete account
       const res = await fetch('/api/delete-account', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -79,6 +102,8 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to delete account');
+
+      // Sign out and redirect to home page
       await signOut({ redirect: false });
       router.push('/');
     } catch (err: any) {
@@ -97,6 +122,7 @@ export default function SettingsPage() {
       }}
     >
       <div className="max-w-2xl mx-auto">
+        {/* Back button to journal page */}
         <Link
           href="/journal"
           className="inline-flex items-center gap-2 bg-white text-indigo-600 border-2 border-indigo-600 px-4 py-2 rounded-full font-semibold hover:bg-indigo-50 transition mb-8"
@@ -104,22 +130,27 @@ export default function SettingsPage() {
           ← Back to Journal
         </Link>
 
+        {/* Main settings card */}
         <div className="glass-card p-8" style={{ backgroundColor: 'rgba(0, 0, 0, 0.75)' }}>
           <h1 className="text-3xl font-bold text-white mb-2">Account Settings</h1>
           <p className="text-white/80 mb-8">Manage your password and account</p>
 
+          {/* User info display */}
           <div className="mb-6 p-4 bg-white/10 rounded-lg">
             <p className="text-sm text-white/70">Logged in as</p>
             <p className="text-lg font-semibold text-white">{session?.user?.name}</p>
             {isDemoUser && <p className="text-xs text-white/50 mt-1">Demo account – entries are cleared on each login</p>}
           </div>
 
+          {/* Success/error messages */}
           {message && <div className="bg-green-500/20 text-green-200 p-3 rounded-lg mb-6 text-sm">{message}</div>}
           {error && <div className="bg-red-500/20 text-red-200 p-3 rounded-lg mb-6 text-sm">{error}</div>}
 
+          {/* Change Password Section */}
           <div className="border-b border-white/20 pb-8 mb-8">
             <h2 className="text-xl font-semibold text-white mb-4">Change Password</h2>
             <form onSubmit={handleChangePassword} className="space-y-4">
+              {/* Current Password field */}
               <div>
                 <label className="block text-sm font-medium text-white/80 mb-1">Current Password</label>
                 <div className="relative">
@@ -136,6 +167,8 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
+
+              {/* New Password field */}
               <div>
                 <label className="block text-sm font-medium text-white/80 mb-1">New Password</label>
                 <div className="relative">
@@ -152,6 +185,8 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Confirm New Password field */}
               <div>
                 <label className="block text-sm font-medium text-white/80 mb-1">Confirm New Password</label>
                 <div className="relative">
@@ -168,16 +203,20 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
+
               <button type="submit" disabled={isChangingPassword} className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition">
                 {isChangingPassword ? 'Updating...' : 'Update Password'}
               </button>
             </form>
           </div>
 
+          {/* Delete Account Section (Danger Zone) */}
           <div>
             <h2 className="text-xl font-semibold text-red-300 mb-4">Danger Zone</h2>
             <p className="text-white/80 mb-4">Once you delete your account, there is no going back. All your journal entries will be permanently removed.</p>
             {isDemoUser && <p className="text-amber-300 text-sm mb-3">⚠️ Demo accounts cannot be deleted.</p>}
+
+            {/* Password confirmation field for deletion */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-white/80 mb-1">Confirm with password</label>
               <div className="relative">
@@ -193,6 +232,8 @@ export default function SettingsPage() {
                 </button>
               </div>
             </div>
+
+            {/* Delete button */}
             <button
               onClick={handleDeleteAccount}
               disabled={isDeleting || isDemoUser}

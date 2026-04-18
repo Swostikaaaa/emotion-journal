@@ -1,20 +1,26 @@
+// components/VoiceInput.tsx
+// A reusable microphone button component that uses the Web Speech API
+// to convert speech to text in real time. It supports continuous listening
+// and interim results (showing text as you speak).
+
 'use client';
 
 import { useState, useRef } from 'react';
 import { Mic, MicOff } from 'lucide-react';
 
 interface VoiceInputProps {
-  onTranscript: (text: string) => void;
-  isListening: boolean;
-  setIsListening: (value: boolean) => void;
+  onTranscript: (text: string) => void;  // Callback when transcript updates
+  isListening: boolean;                  // Whether microphone is currently active
+  setIsListening: (value: boolean) => void; // Setter for listening state
 }
 
 export default function VoiceInput({ onTranscript, isListening, setIsListening }: VoiceInputProps) {
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<any>(null); // Hold recognition instance to allow stopping
   const [error, setError] = useState<string | null>(null);
 
+  // Request microphone permission and start speech recognition
   const startListening = async () => {
-    // Request microphone permission
+    // Request explicit microphone permission
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (permError) {
@@ -22,19 +28,22 @@ export default function VoiceInput({ onTranscript, isListening, setIsListening }
       return;
     }
 
+    // Check browser support
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       setError('Your browser does not support speech recognition. Try Chrome, Edge, or Safari.');
       return;
     }
 
+    // Use Web Speech API (webkit prefix for older browsers)
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
     const recognition = new SpeechRecognition();
-    recognition.continuous = true;        // Keep listening until stopped
-    recognition.interimResults = true;    // Show text as you speak
+    recognition.continuous = true;        // Keep listening until manually stopped
+    recognition.interimResults = true;    // Show partial results as user speaks
     recognition.lang = 'en-US';
 
-    let finalTranscript = '';
+    let finalTranscript = ''; // Accumulate final (confirmed) words
 
+    // Called whenever new speech is recognised
     recognition.onresult = (event: any) => {
       let interimTranscript = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -45,7 +54,7 @@ export default function VoiceInput({ onTranscript, isListening, setIsListening }
           interimTranscript += transcript;
         }
       }
-      // Send the combined text (final + interim) to the parent
+      // Send combined final + interim text to parent component (real‑time update)
       onTranscript(finalTranscript + interimTranscript);
     };
 
@@ -62,7 +71,7 @@ export default function VoiceInput({ onTranscript, isListening, setIsListening }
     };
 
     recognition.onend = () => {
-      setIsListening(false);
+      setIsListening(false); // Ensure button state resets when recognition stops
     };
 
     recognition.start();
@@ -71,6 +80,7 @@ export default function VoiceInput({ onTranscript, isListening, setIsListening }
     setError(null);
   };
 
+  // Stop the recognition manually (user clicked the button again)
   const stopListening = () => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
@@ -92,6 +102,7 @@ export default function VoiceInput({ onTranscript, isListening, setIsListening }
       >
         {isListening ? <MicOff size={20} /> : <Mic size={20} />}
       </button>
+      {/* Status message while recording */}
       {isListening && <span className="text-sm text-white/80 animate-pulse">🎙️ Recording... (click mic to stop)</span>}
       {error && <span className="text-xs text-red-500">{error}</span>}
     </div>

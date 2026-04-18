@@ -1,3 +1,4 @@
+//Script to ping Neon database every 4 minutes to prevent idle suspension.
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 

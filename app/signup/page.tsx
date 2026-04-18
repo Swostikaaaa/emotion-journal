@@ -1,3 +1,7 @@
+// app/signup/page.tsx
+// This page allows new users to create an account.
+// It sends a request to the signup API, then automatically logs the user in.
+
 'use client';
 
 import { useState } from 'react';
@@ -12,13 +16,15 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // Toggle for password visibility
 
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
+    // 1. Call the signup API to create the user
     const res = await fetch('/api/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -32,7 +38,7 @@ export default function SignupPage() {
       return;
     }
 
-    // Auto‑login after signup
+    // 2. If signup succeeded, automatically log the user in
     const result = await signIn('credentials', {
       username,
       password,
@@ -43,7 +49,7 @@ export default function SignupPage() {
       setError('Account created, but auto‑login failed. Please log in manually.');
       router.push('/login');
     } else {
-      router.push('/journal');
+      router.push('/journal'); // Redirect to journal page on success
     }
   };
 
@@ -57,15 +63,18 @@ export default function SignupPage() {
       }}
     >
       <div className="max-w-md w-full glass-card p-8 floating" style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}>
-      <Link
-  href="/"
-  className="inline-flex items-center gap-2 bg-white text-indigo-600 border-2 border-indigo-600 px-4 py-2 rounded-full font-semibold hover:bg-indigo-50 transition mb-6"
->
-  ← Back to Home
-</Link>
-<h1 className="text-3xl font-bold text-white drop-shadow-lg mb-2 text-center">Create Account</h1>
+        {/* Back to home button */}
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 bg-white text-indigo-600 border-2 border-indigo-600 px-4 py-2 rounded-full font-semibold hover:bg-indigo-50 transition mb-6"
+        >
+          ← Back to Home
+        </Link>
+
+        <h1 className="text-3xl font-bold text-white drop-shadow-lg mb-2 text-center">Create Account</h1>
         <p className="text-white/70 mb-6">Start your private journaling journey</p>
 
+        {/* Display error message if any */}
         {error && (
           <div className="bg-red-500/20 text-red-200 p-3 rounded-lg mb-4 text-sm">
             {error}
@@ -84,23 +93,25 @@ export default function SignupPage() {
               disabled={isLoading}
             />
           </div>
+
           <div className="relative">
-  <input
-    type={showPassword ? 'text' : 'password'}
-    value={password}
-    onChange={(e) => setPassword(e.target.value)}
-    className="w-full px-4 py-2 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 pr-10"
-    required
-    disabled={isLoading}
-  />
-  <button
-    type="button"
-    onClick={() => setShowPassword(!showPassword)}
-    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
-  >
-    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-  </button>
-</div>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 pr-10"
+              required
+              disabled={isLoading}
+            />
+            {/* Toggle password visibility button */}
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
 
           <button
             type="submit"

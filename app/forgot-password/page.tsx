@@ -1,3 +1,7 @@
+// app/forgot-password/page.tsx
+// This page allows a user to request a password reset by entering their username.
+// After verification, they are redirected to the reset-password page with the username as a query parameter.
+
 'use client';
 
 import { useState } from 'react';
@@ -10,12 +14,13 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Handle form submission – check if username exists, then redirect
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
-    // Check if username exists
+    // Call the check-user API to verify if the username exists
     const res = await fetch('/api/check-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -24,10 +29,11 @@ export default function ForgotPasswordPage() {
     const data = await res.json();
 
     if (!res.ok) {
+      // If user not found or other error, display error message
       setError(data.error || 'User not found');
       setIsLoading(false);
     } else {
-      // Redirect to reset page with username as query param
+      // User exists – redirect to reset-password page with username in URL
       router.push(`/reset-password?username=${encodeURIComponent(username)}`);
     }
   };
@@ -41,13 +47,16 @@ export default function ForgotPasswordPage() {
         backgroundPosition: 'center',
       }}
     >
+      {/* Glass card container with dark overlay for readability */}
       <div className="max-w-md w-full glass-card p-8 floating" style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}>
+        {/* Back button to login page */}
         <Link href="/login" className="inline-flex items-center gap-2 bg-white text-indigo-600 border-2 border-indigo-600 px-4 py-2 rounded-full font-semibold hover:bg-indigo-50 transition mb-6">
           ← Back to Login
         </Link>
         <h1 className="text-3xl font-bold text-white drop-shadow-lg mb-2 text-center">Forgot Password</h1>
         <p className="text-white/80 mb-6">Enter your username to reset your password.</p>
 
+        {/* Display error message if any */}
         {error && <div className="bg-red-500/20 text-red-200 p-3 rounded-lg mb-4 text-sm">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-5">

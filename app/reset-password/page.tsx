@@ -1,3 +1,8 @@
+// app/reset-password/page.tsx
+// This page allows a user to reset their password after they have verified their identity via username.
+// The username is passed as a query parameter from the forgot-password page.
+// It includes password visibility toggles and validation.
+
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -5,10 +10,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 
+// Inner component that uses useSearchParams (must be wrapped in Suspense)
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const username = searchParams.get('username');
+  const username = searchParams.get('username'); // Get username from URL query parameter
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -16,20 +22,27 @@ function ResetPasswordForm() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  // Show/hide toggles
+  // Toggles for showing/hiding passwords
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Handle form submission – send new password to API
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate that username exists in URL
     if (!username) {
       setError('Invalid reset link.');
       return;
     }
+
+    // Check that passwords match
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match.');
       return;
     }
+
+    // Check minimum length
     if (newPassword.length < 6) {
       setError('Password must be at least 6 characters.');
       return;
@@ -39,6 +52,7 @@ function ResetPasswordForm() {
     setError('');
 
     try {
+      // Call the direct password reset API (no email/token required)
       const res = await fetch('/api/reset-password-direct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -46,7 +60,9 @@ function ResetPasswordForm() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to reset password');
+
       setSuccess(true);
+      // Redirect to login page after 2 seconds
       setTimeout(() => router.push('/login'), 2000);
     } catch (err: any) {
       setError(err.message);
@@ -55,6 +71,7 @@ function ResetPasswordForm() {
     }
   };
 
+  // Show error if username is missing
   if (!username) {
     return (
       <div className="text-center">
@@ -66,6 +83,7 @@ function ResetPasswordForm() {
     );
   }
 
+  // Show success message after password reset
   if (success) {
     return (
       <div className="text-center">
@@ -76,6 +94,7 @@ function ResetPasswordForm() {
     );
   }
 
+  // Password reset form
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
@@ -134,6 +153,7 @@ function ResetPasswordForm() {
   );
 }
 
+// Main page component (wrapped in Suspense because useSearchParams is used)
 export default function ResetPasswordPage() {
   return (
     <main
@@ -145,6 +165,7 @@ export default function ResetPasswordPage() {
       }}
     >
       <div className="max-w-md w-full glass-card p-8 floating" style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}>
+        {/* Back to login button */}
         <Link
           href="/login"
           className="inline-flex items-center gap-2 bg-white text-indigo-600 border-2 border-indigo-600 px-4 py-2 rounded-full font-semibold hover:bg-indigo-50 transition mb-6"
@@ -153,6 +174,7 @@ export default function ResetPasswordPage() {
         </Link>
         <h1 className="text-3xl font-bold text-white drop-shadow-lg mb-2 text-center">Reset Password</h1>
         <p className="text-white/80 mb-6">Create a new password for your account</p>
+        {/* Suspense is required because ResetPasswordForm uses useSearchParams */}
         <Suspense fallback={<div className="text-white">Loading...</div>}>
           <ResetPasswordForm />
         </Suspense>
