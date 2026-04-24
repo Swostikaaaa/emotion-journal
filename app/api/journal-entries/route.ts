@@ -1,61 +1,85 @@
-// app/api/journal-entries/route.ts
-// This API endpoint handles operations on the collection of journal entries:
-// GET (fetch all entries for the authenticated user) and POST (create a new entry).
-
 import { NextResponse } from 'next/server';
-import { auth } from '@/app/api/auth/[...nextauth]/route'; // NextAuth helper
-import { prisma } from '@/lib/prisma'; // Prisma client
+import { auth } from '@/app/api/auth/[...nextauth]/route';
+import { prisma } from '@/lib/prisma';
 
-// Helper function to extract the logged-in user's ID from the session
+// Helper: get the authenticated user's ID from the session
 async function getUserId() {
   const session = await auth();
   return session?.user?.id || null;
 }
 
-// GET /api/journal-entries - Fetch all entries for the logged-in user
+// Helper: call Groq API to detect emotion and generate a short empathetic summary
+async function detectEmotion(text: string): Promise<{ emotion: string; summary: string }> {
+  try {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) return { emotion: 'neutral', summary: '' };
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [{
+          role: 'user',
+          content: `You are an empathetic emotion detection expert for a journaling app. Analyze this journal entry carefully.
+
+Return ONLY a JSON object in this exact format with no extra text:
+{"emotion": "one_emotion_word", "summary": "one warm empathetic sentence acknowledging their feelings"}
+
+Rules:
+- emotion: single word that best captures the PRIMARY feeling (can be any emotion: joy, sadness, anger, fear, anxiety, loneliness, gratitude, pride, excitement, grief, frustration, hope, guilt, contentment, overwhelmed, etc.)
+- summary: 1 sentence that warmly acknowledges ALL the feelings mentioned, especially if mixed
+- Be empathetic and human in the summary
+
+Journal entry: ${text.slice(0, 800)}`
+        }],
+        max_tokens: 100
+      }),
+    });
+
+    const result = await response.json();
+    const raw = result?.choices?.[0]?.message?.content?.trim();
+    const parsed = JSON.parse(raw);
+    return {
+      emotion: parsed.emotion?.toLowerCase() || 'neutral',
+      summary: parsed.summary || ''
+    };
+  } catch (err) {
+    console.error('Groq detection failed:', err);
+    return { emotion: 'neutral', summary: '' };
+  }
+}
+
+// GET handler: fetch all journal entries for the authenticated user
 export async function GET() {
-  // 1. Authenticate the user
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  // 2. Fetch all entries belonging to this user, ordered by newest first
   const entries = await prisma.journalEntry.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
   });
-
-  // 3. Return entries as JSON
   return NextResponse.json(entries);
 }
 
-// POST /api/journal-entries - Create a new journal entry
+// POST handler: create a new journal entry, detect emotion & summary, save to database
 export async function POST(request: Request) {
-  // 1. Authenticate the user
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // 2. Extract data from the request body
-  const { title, content, subject, emotion } = await request.json();
-
-  // 3. Validate required fields
+  const { title, content, subject } = await request.json();
   if (!title || !content) {
     return NextResponse.json({ error: 'Title and content required' }, { status: 400 });
   }
 
-  // 4. Prepare the subject (topics) field – default to "General" if empty
+  const { emotion: detectedEmotion, summary: emotionSummary } = await detectEmotion(content);
   const topicsString = (subject && subject.trim() !== '') ? subject.trim() : 'General';
 
-  // 5. Create the entry in the database
   const entry = await prisma.journalEntry.create({
-    data: {
-      title,
-      content,
-      emotion: emotion || 'neutral', // fallback to neutral if no emotion selected
-      topics: topicsString,
-      userId,
-    },
+    data: { title, content, emotion: detectedEmotion, topics: topicsString, userId },
   });
 
-  // 6. Return the newly created entry with HTTP 201 status (Created)
-  return NextResponse.json(entry, { status: 201 });
+  return NextResponse.json({ ...entry, detectedEmotion, emotionSummary }, { status: 201 });
 }
