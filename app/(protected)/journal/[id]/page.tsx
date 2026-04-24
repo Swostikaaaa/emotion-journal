@@ -14,7 +14,6 @@ type Entry = {
   updatedAt: string;
 };
 
-// Emoji map with fallback for custom emotions
 const emotionEmoji: Record<string, string> = {
   joy: '😊', sadness: '😢', anger: '😠', fear: '😨', love: '❤️', surprise: '😲', neutral: '😐',
   anxious: '😰', anxiety: '😰', calm: '😌', hopeful: '🙏', grateful: '🙏', gratitude: '🙏',
@@ -48,6 +47,13 @@ export default function ViewEntryPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Automatically fetch summary when entry loads (already you have this)
+  useEffect(() => {
+    if (entry && !summary) {
+      handleEmotionClick();
+    }
+  }, [entry, summary]);
+
   const handleEmotionClick = async () => {
     setShowSummary(true);
     if (summary || !entry) return;
@@ -67,13 +73,6 @@ export default function ViewEntryPage() {
     }
   };
 
-  // ✅ NEW: Automatically show sentiment feedback when page loads
-  useEffect(() => {
-    if (entry && !summary) {
-      handleEmotionClick();
-    }
-  }, [entry, summary]);
-
   const handleDelete = async () => {
     if (!confirm('Delete this entry permanently?')) return;
     await fetch(`/api/journal-entries/${id}`, { method: 'DELETE' });
@@ -92,11 +91,9 @@ export default function ViewEntryPage() {
         <div className="glass-card p-8">
           <div className="flex justify-between items-start mb-4">
             <h1 className="text-3xl font-bold text-white">{entry.title}</h1>
-
             <button
               onClick={handleEmotionClick}
               className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm cursor-pointer hover:opacity-80 transition ${emotionColors[entry.emotion] || 'bg-indigo-100 text-indigo-800'}`}
-              title="Click for sentiment feedback"
             >
               <span>{emotionEmoji[entry.emotion] || '🔍'}</span>
               <span className="capitalize">{entry.emotion}</span>
@@ -104,18 +101,27 @@ export default function ViewEntryPage() {
             </button>
           </div>
 
+          {/* Sentiment feedback panel – with note for long entries */}
           {showSummary && (
             <div className="bg-white/20 border border-white/30 rounded-xl p-4 mb-6">
               <p className="text-white/60 text-xs mb-1 uppercase tracking-wide">Sentiment Feedback</p>
               {summaryLoading ? (
                 <p className="text-white/80 text-sm animate-pulse">Analysing your feelings...</p>
               ) : (
-                <p className="text-white italic text-sm">"{summary}"</p>
+                <>
+                  <p className="text-white italic text-sm">"{summary}"</p>
+                  {entry.content.length > 800 && (
+                    <p className="text-xs text-white/100 mt-2 italic">
+                      Note: Sentiment analysis based on first 800 characters only.
+                    </p>
+                  )}
+                </>
               )}
               <button onClick={() => setShowSummary(false)} className="text-white/50 text-xs mt-2 hover:text-white">Close</button>
             </div>
           )}
 
+          {/* Topics */}
           {entry.topics && (
             <div className="flex flex-wrap gap-2 mb-6">
               {entry.topics.split(',').map(topic => (
