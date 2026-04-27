@@ -78,8 +78,7 @@ export async function POST(request: Request) {
   const topicsString = (subject && subject.trim() !== '') ? subject.trim() : 'General';
 
   const entry = await prisma.journalEntry.create({
-    data: { title, content, emotion: detectedEmotion, topics: topicsString, userId },
+    data: { title, content, emotion: detectedEmotion, summary: emotionSummary, topics: topicsString, userId },
   });
-
-  return NextResponse.json({ ...entry, detectedEmotion, emotionSummary }, { status: 201 });
+  return NextResponse.json(entry, { status: 201 });
 }

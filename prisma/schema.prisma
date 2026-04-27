@@ -28,6 +28,7 @@ model JournalEntry {
   title     String                                  // Entry title
   content   String                                  // Entry content (the journal text)
   emotion   String                                  // User-selected emotion (e.g., joy, sadness, custom)
+  summary  String?                                 // AI-generated empathetic summary from Groq
   topics    String?                                 // User-defined subject (e.g., Work, Health) – optional
   userId    String                                  // Foreign key linking to the User who owns this entry
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade) // Relation – delete entries if user is deleted

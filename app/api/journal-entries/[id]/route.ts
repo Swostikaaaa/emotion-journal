@@ -132,34 +132,33 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   // Update the journal entry in the database
   const updated = await prisma.journalEntry.update({
     where: { id },
-    data: { title, content, emotion: detectedEmotion, topics: topicsString, updatedAt: new Date() },
+    data: { title, content, emotion: detectedEmotion, summary: emotionSummary, topics: topicsString, updatedAt: new Date() },
   });
 
   // Return the updated entry along with the newly detected emotion and summary (for UI feedback)
-  return NextResponse.json({ ...updated, detectedEmotion, emotionSummary });
-}
+  return NextResponse.json(updated); }
 
-/**
- * DELETE /api/journal/[id]
- * Deletes a journal entry only if it belongs to the authenticated user.
- *
- * @param {Request} request - Incoming HTTP request
- * @param {Object} params - Route parameter object containing the journal entry ID
- * @returns {NextResponse} JSON response confirming deletion or error
- */
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  // Authenticate user
-  const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  /**
+   * DELETE /api/journal/[id]
+   * Deletes a journal entry only if it belongs to the authenticated user.
+   *
+   * @param {Request} request - Incoming HTTP request
+   * @param {Object} params - Route parameter object containing the journal entry ID
+   * @returns {NextResponse} JSON response confirming deletion or error
+   */
+  export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+    // Authenticate user
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { id } = await params;
+    const { id } = await params;
 
-  // Confirm ownership before attempting deletion
-  const existing = await prisma.journalEntry.findFirst({ where: { id, userId } });
-  if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    // Confirm ownership before attempting deletion
+    const existing = await prisma.journalEntry.findFirst({ where: { id, userId } });
+    if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  // Perform deletion
-  await prisma.journalEntry.delete({ where: { id } });
+    // Perform deletion
+    await prisma.journalEntry.delete({ where: { id } });
 
-  return NextResponse.json({ message: 'Deleted' });
-}
+    return NextResponse.json({ message: 'Deleted' });
+  }

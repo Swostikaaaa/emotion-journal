@@ -18,7 +18,7 @@ const emotionEmoji: Record<string, string> = {
   anxious: '😰', anxiety: '😰', calm: '😌', hopeful: '🙏', grateful: '🙏', gratitude: '🙏',
   lonely: '😔', loneliness: '😔', proud: '😎', pride: '😎', confused: '🤔', overwhelmed: '😫',
   tired: '😴', excited: '🤩', excitement: '🤩', peaceful: '😌', frustrated: '😤', frustration: '😤',
-  grief: '😭', guilt: '😞', hope: '🌟', contentment: '😊', melancholic: '😔', sorrow: '😢', relief: '😮‍💨', anticipation: '🫣'
+  grief: '😭', guilt: '😞', hope: '🌟', contentment: '😊', melancholic: '😔', sorrow: '😢', relief: '😮‍💨', anticipation: '🫣', inspired: '🤩'
 };
 
 // Highlight search matches in text
