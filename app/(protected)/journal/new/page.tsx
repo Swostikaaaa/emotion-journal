@@ -75,8 +75,8 @@ export default function NewEntryPage() {
       // Response contains detected emotion + summary from backend
       const data = await res.json();
 
-      setDetectedEmotion(data.detectedEmotion || '');
-      setEmotionSummary(data.emotionSummary || '');
+      setDetectedEmotion(data.emotion || '');
+      setEmotionSummary(data.summary || '');
 
       // Redirect user to journal page after short delay
       setTimeout(() => router.push('/journal'), 3000);
