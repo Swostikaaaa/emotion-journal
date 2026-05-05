@@ -16,6 +16,7 @@ const loginSchema = z.object({
 
 // Export NextAuth handlers, signIn, signOut, and auth helper
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  trustHost: true, // ✅ Add this line to trust the production host (fixes UntrustedHost error)
   providers: [
     CredentialsProvider({
       name: "Credentials",
