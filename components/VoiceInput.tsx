@@ -1,26 +1,20 @@
-// components/VoiceInput.tsx
-// A reusable microphone button component that uses the Web Speech API
-// to convert speech to text in real time. It supports continuous listening
-// and interim results (showing text as you speak).
-
 'use client';
 
 import { useState, useRef } from 'react';
 import { Mic, MicOff } from 'lucide-react';
 
 interface VoiceInputProps {
-  onTranscript: (text: string) => void;  // Callback when transcript updates
-  isListening: boolean;                  // Whether microphone is currently active
-  setIsListening: (value: boolean) => void; // Setter for listening state
+  onTranscript: (text: string) => void;
+  isListening: boolean;
+  setIsListening: (value: boolean) => void;
 }
 
 export default function VoiceInput({ onTranscript, isListening, setIsListening }: VoiceInputProps) {
-  const recognitionRef = useRef<any>(null); // Hold recognition instance to allow stopping
+  const recognitionRef = useRef<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Request microphone permission and start speech recognition
   const startListening = async () => {
-    // Request explicit microphone permission
+    // Request microphone permission (required for iOS)
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (permError) {
@@ -29,33 +23,26 @@ export default function VoiceInput({ onTranscript, isListening, setIsListening }
     }
 
     // Check browser support
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    if (!SpeechRecognition) {
       setError('Your browser does not support speech recognition. Try Chrome, Edge, or Safari.');
       return;
     }
 
-    // Use Web Speech API (webkit prefix for older browsers)
-    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
     const recognition = new SpeechRecognition();
-    recognition.continuous = true;        // Keep listening until manually stopped
-    recognition.interimResults = true;    // Show partial results as user speaks
+    // Use non‑continuous mode for iOS compatibility (stops automatically after a pause)
+    recognition.continuous = false;
+    recognition.interimResults = false;
     recognition.lang = 'en-US';
 
-    let finalTranscript = ''; // Accumulate final (confirmed) words
+    recognition.onstart = () => {
+      setIsListening(true);
+      setError(null);
+    };
 
-    // Called whenever new speech is recognised
     recognition.onresult = (event: any) => {
-      let interimTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          finalTranscript += transcript + ' ';
-        } else {
-          interimTranscript += transcript;
-        }
-      }
-      // Send combined final + interim text to parent component (real‑time update)
-      onTranscript(finalTranscript + interimTranscript);
+      const transcript = event.results[0][0].transcript;
+      onTranscript(transcript);
     };
 
     recognition.onerror = (event: any) => {
@@ -71,16 +58,13 @@ export default function VoiceInput({ onTranscript, isListening, setIsListening }
     };
 
     recognition.onend = () => {
-      setIsListening(false); // Ensure button state resets when recognition stops
+      setIsListening(false);
     };
 
     recognition.start();
     recognitionRef.current = recognition;
-    setIsListening(true);
-    setError(null);
   };
 
-  // Stop the recognition manually (user clicked the button again)
   const stopListening = () => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
@@ -102,8 +86,7 @@ export default function VoiceInput({ onTranscript, isListening, setIsListening }
       >
         {isListening ? <MicOff size={20} /> : <Mic size={20} />}
       </button>
-      {/* Status message while recording */}
-      {isListening && <span className="text-sm text-white/80 animate-pulse">🎙️ Recording... (click mic to stop)</span>}
+      {isListening && <span className="text-sm text-white/80 animate-pulse">🎙️ Recording... (speak, then it stops automatically)</span>}
       {error && <span className="text-xs text-red-500">{error}</span>}
     </div>
   );
