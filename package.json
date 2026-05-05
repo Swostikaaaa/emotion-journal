@@ -2,6 +2,12 @@
   "name": "emotion-journal",
   "version": "0.1.0",
   "private": true,
+
+  // ========== SCRIPTS ==========
+  // - "dev": for local development (npm run dev)
+  // - "build": Azure runs this during deployment; also needed locally before starting
+  // - "start": Azure runs this to serve the app; also used locally after building
+  // - "postinstall": automatically runs after npm install – ensures Prisma Client is generated
   "scripts": {
     "postinstall": "prisma generate",
     "dev": "next dev",
@@ -9,6 +15,8 @@
     "start": "next start",
     "lint": "eslint"
   },
+
+  // ========== DEPENDENCIES ==========
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
     "@prisma/client": "^5.22.0",
@@ -24,6 +32,8 @@
     "recharts": "^3.8.1",
     "zod": "^4.3.6"
   },
+
+  // ========== DEV DEPENDENCIES  ==========
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
@@ -37,8 +47,6 @@
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",
     "typescript": "^5"
-  },
-  "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   }
-}
+
+  

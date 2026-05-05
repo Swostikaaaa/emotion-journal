@@ -1,0 +1,8 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/07484353-0e29-494f-952f-fba07e84c659/resourceGroups/rg-emotion-journal/providers/Microsoft.Web/sites/emotion-journal",
+    "appService.deploySubpath": "."
+}

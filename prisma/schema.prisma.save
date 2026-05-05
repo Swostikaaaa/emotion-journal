@@ -1,0 +1,46 @@
+// prisma/schema.prisma
+// This file defines the database schema using Prisma ORM.
+// It includes models for User, JournalEntry, and PasswordResetToken.
+
+generator client {
+  provider = "prisma-client-js"  // Generates TypeScript client for database operations
+}
+
+datasource db {
+  provider = "postgresql"        // Using PostgreSQL as the database
+  url      = env("DATABASE_URL") // Connection string from environment variables
+}
+
+// User model – stores account information
+model User {
+  id            String   @id @default(cuid())       // Unique identifier, auto-generated
+  name          String   @unique                    // Username, must be unique
+  password      String                              // Hashed password (bcrypt)
+  journalEntries JournalEntry[]                     // One-to-many relationship with journal entries
+  resetTokens   PasswordResetToken[]                // One-to-many relationship with password reset tokens
+  createdAt     DateTime @default(now())            // Timestamp of account creation
+  updatedAt     DateTime @updatedAt                 // Timestamp of last update
+}
+
+// JournalEntry model – stores each journal entry
+model JournalEntry {
+  id        String   @id @default(cuid())           // Unique identifier
+  title     String                                  // Entry title
+  content   String                                  // Entry content (the journal text)
+  emotion   String                                  // User-selected emotion (e.g., joy, sadness, custom)
+  topics    String?                                 // User-defined subject (e.g., Work, Health) – optional
+  userId    String                                  // Foreign key linking to the User who owns this entry
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade) // Relation – delete entries if user is deleted
+  createdAt DateTime @default(now())                // When the entry was created
+  updatedAt DateTime @updatedAt                     // When the entry was last edited
+}
+
+// PasswordResetToken model – stores temporary tokens for password reset (username‑based flow, not email)
+model PasswordResetToken {
+  id        String   @id @default(cuid())           // Unique identifier
+  token     String   @unique                        // The reset token (random string)
+  userId    String                                  // Foreign key to the User
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade) // Relation – delete tokens if user is deleted
+  expiresAt DateTime                                // When the token expires (1 hour after creation)
+  createdAt DateTime @default(now())                // When the token was created
+}
