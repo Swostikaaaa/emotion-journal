@@ -5,9 +5,6 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # Opt into Node.js 24 for runner
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -17,10 +14,8 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci
-      - run: npm run build --verbose
-      - name: List .next contents for debug
-        run: ls -la .next/
-      - uses: azure/webapps-deploy@v2
+      - run: npm run build
+      - uses: azure/webapps-deploy@v3
         with:
           app-name: 'emotion-journal'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
