@@ -1,42 +1,57 @@
+/* Tailwind CSS base, components, and utilities imports */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Base layer – custom styles applied to raw HTML elements */
 @layer base {
+  /* Global body styling */
   body {
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    min-height: 100vh;
-    transition: background-image 0.2s ease-in-out;
+    background-size: cover;           /* Ensure background image covers entire viewport */
+    background-position: center;      /* Center the background image */
+    background-attachment: fixed;     /* Fix background so it doesn't scroll with content */
+    min-height: 100vh;                /* Minimum height fills the viewport */
+    transition: background-image 0.2s ease-in-out; /* Smooth transition if background changes dynamically */
   }
+  
+  /* Main content fade-in animation */
   main {
-    animation: fadeIn 0.2s ease;
+    animation: fadeIn 0.2s ease;      /* Apply fadeIn animation quickly (0.2 seconds) */
   }
+  
+  /* Keyframes for fadeIn: from slightly transparent and lower, to fully opaque and normal position */
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(5px); } /* Start invisible and 5px down */
+    to { opacity: 1; transform: translateY(0); }     /* End fully visible and original position */
   }
+  
+  /* Glassmorphic card component – semi-transparent with blur and border */
   .glass-card {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(12px);
-    border-radius: 2rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);     /* Very light white background with low opacity */
+    backdrop-filter: blur(12px);               /* Apply 12px blur to background behind element */
+    border-radius: 2rem;                      /* Large rounded corners (32px) */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+    border: 1px solid rgba(255, 255, 255, 0.3); /* Subtle white border for definition */
   }
+  
+  /* Floating animation class – gentle up-and-down motion */
   .floating {
-    animation: float 6s ease-in-out infinite;
+    animation: float 6s ease-in-out infinite;  /* Infinite floating loop lasting 6 seconds */
   }
+  
+  /* Keyframes for float: moves element up by 10px and back down */
   @keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
+    0% { transform: translateY(0px); }     /* Start at original position */
+    50% { transform: translateY(-10px); }  /* Move up slightly at midpoint */
+    100% { transform: translateY(0px); }   /* Return to original position */
   }
+  
+  /* Hover lift effect – applies smooth transition and lifts element on hover */
   .hover-lift {
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s; /* Smooth transform and shadow changes */
   }
   .hover-lift:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 25px -12px rgba(0, 0, 0, 0.25);
+    transform: translateY(-5px);                 /* Move up by 5px on hover */
+    box-shadow: 0 20px 25px -12px rgba(0, 0, 0, 0.25); /* Add larger shadow for depth effect */
   }
 }
