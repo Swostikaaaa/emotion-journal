@@ -59,8 +59,17 @@ export default function EditEntryPage() {
       .catch(() => setLoading(false)); // Hide loader on error
   }, [id]);
 
-  // Callback for VoiceInput component – updates the journal content with transcribed text
-  const handleTranscript = (text: string) => setContent(text);
+  /**
+   * Handles each chunk of recognised speech from VoiceInput.
+   * Because VoiceInput now sends only the *incremental* text (the new characters since the last chunk),
+   * we simply append it to the existing content.
+   *
+   * This preserves any text the user has typed (or already voiced) and
+   * builds the spoken sentence correctly without duplication.
+   */
+  const handleTranscript = (voiceText: string) => {
+    setContent((prevContent) => prevContent + voiceText);
+  };
 
   // Handle form submission (update entry via PUT request)
   const handleSubmit = async (e: React.FormEvent) => {

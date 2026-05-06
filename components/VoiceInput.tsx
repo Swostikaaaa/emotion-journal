@@ -1,40 +1,42 @@
 'use client';
 
-// Import React hooks and the Mic/MicOff icons from lucide-react
+// React hooks for state, refs, and side effects
 import { useState, useRef, useEffect } from 'react';
+// Icons for microphone on/off states
 import { Mic, MicOff } from 'lucide-react';
 
-// Define the props interface for the VoiceInput component
+// Props expected by the VoiceInput component
 interface VoiceInputProps {
-  onTranscript: (text: string) => void;    // Callback to send transcribed text to parent
-  isListening: boolean;                    // External state indicating if listening is active
-  setIsListening: (value: boolean) => void; // Function to update listening state
+  onTranscript: (text: string) => void;    // Sends incremental voice text to parent
+  isListening: boolean;                    // Whether mic is currently active (controlled by parent)
+  setIsListening: (value: boolean) => void; // Tells parent to update listening state
 }
 
-// Main component that handles voice recognition using the Web Speech API
 export default function VoiceInput({ onTranscript, isListening, setIsListening }: VoiceInputProps) {
-  // Ref to hold the recognition instance so we can stop it later
+  // Holds the Web Speech API recognition instance so we can stop it later
   const recognitionRef = useRef<any>(null);
-  // State for displaying error messages to the user
+  // Stores the entire recognized text of the current session – used to calculate the delta (new characters)
+  const accumulatedTextRef = useRef<string>('');
+  // Error message to display to the user (e.g., permission denied)
   const [error, setError] = useState<string | null>(null);
-  // State to detect if the user is on an iOS device (which has limited speech recognition support)
+  // Detect iOS devices (speech recognition works poorly there)
   const [isIOS, setIsIOS] = useState(false);
 
-  // Detect iOS (iPhone, iPad, iPod) using user agent string
+  // Detect iOS using the user agent string
   useEffect(() => {
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(iOS);
   }, []);
 
-  // Function to start voice recognition
+  // Starts voice recognition (microphone)
   const startListening = async () => {
-    // Warn iOS users about limitations and exit early
+    // Warn iOS users about limitations
     if (isIOS) {
       setError('Voice input on iOS has limitations. Use desktop Chrome/Safari for the best experience.');
       return;
     }
 
-    // Request microphone permission explicitly to catch denial early
+    // Request microphone permission; catch denial early
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (permError) {
@@ -42,43 +44,55 @@ export default function VoiceInput({ onTranscript, isListening, setIsListening }
       return;
     }
 
-    // Check if the browser supports SpeechRecognition (webkit prefix for Chrome, standard for others)
+    // Check if browser supports the Speech Recognition API
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       setError('Your browser does not support speech recognition. Try Chrome, Edge, or Safari.');
       return;
     }
 
-    // Get the appropriate SpeechRecognition constructor
+    // Reset the accumulated text for this new session
+    accumulatedTextRef.current = '';
+
+    // Get the correct constructor (webkit prefix for Chrome, standard for others)
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
     const recognition = new SpeechRecognition();
 
-    // Configure recognition: continuous listening, return interim results, language English
+    // Configure recognition: continuous listening, return interim results, English language
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 
-    // Buffer for the final transcript (accumulates across multiple results)
+    // Buffers that persist across multiple `onresult` calls (thanks to closure)
     let finalTranscript = '';
+    let interimTranscript = '';
 
-    // Handle results as they come from the speech recognizer
+    // Called whenever the recognizer has new text (words are being recognised)
     recognition.onresult = (event: any) => {
-      let interimTranscript = '';
-      // Iterate over all result chunks from the event
+      interimTranscript = '';
+      // Build the full recognised text from the event
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          // Add final chunks to the permanent buffer with a space
           finalTranscript += transcript + ' ';
         } else {
-          // Build the current interim transcript
           interimTranscript += transcript;
         }
       }
-      // Send the combined final + interim text to the parent component
-      onTranscript(finalTranscript + interimTranscript);
+      const currentFullText = finalTranscript + interimTranscript;
+      // Compute the text that is *new* since the last time we sent anything
+      const previousText = accumulatedTextRef.current;
+      let deltaText = '';
+      if (currentFullText.length > previousText.length) {
+        deltaText = currentFullText.slice(previousText.length);
+      }
+      // If there is any new text, send it to the parent and update the reference
+      if (deltaText) {
+        onTranscript(deltaText);
+        accumulatedTextRef.current = currentFullText;
+      }
     };
 
-    // Handle any errors that occur during recognition
+    // Handle errors (no speech, permission blocked, etc.)
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
       if (event.error === 'not-allowed') {
@@ -88,34 +102,30 @@ export default function VoiceInput({ onTranscript, isListening, setIsListening }
       } else {
         setError(`Error: ${event.error}`);
       }
-      // Ensure the listening state is turned off on error
       setIsListening(false);
     };
 
-    // When recognition ends naturally (or stopped), update the listening state
+    // Called when recognition stops (either by the user or automatically)
     recognition.onend = () => {
       setIsListening(false);
     };
 
-    // Start the recognition engine
+    // Start listening
     recognition.start();
-    // Store the recognition instance in the ref for later stopping
     recognitionRef.current = recognition;
-    // Update the listening state to true
     setIsListening(true);
-    // Clear any previous error messages
     setError(null);
   };
 
-  // Function to stop voice recognition
+  // Stops the current voice recognition session
   const stopListening = () => {
     if (recognitionRef.current) {
-      recognitionRef.current.stop();      // Stop the recognition service
-      setIsListening(false);              // Update the listening state
+      recognitionRef.current.stop();
+      setIsListening(false);
     }
   };
 
-  // Render the UI: a button with mic icon, plus status messages
+  // Render the microphone button and status messages
   return (
     <div className="flex items-center gap-2">
       <button
@@ -123,20 +133,21 @@ export default function VoiceInput({ onTranscript, isListening, setIsListening }
         onClick={isListening ? stopListening : startListening}
         className={`p-2 rounded-full transition ${
           isListening
-            ? 'bg-red-500 text-white animate-pulse'   // Active recording style
-            : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200' // Inactive style
+            ? 'bg-red-500 text-white animate-pulse'
+            : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
         }`}
         title={isListening ? 'Stop recording' : 'Start voice input'}
       >
         {isListening ? <MicOff size={20} /> : <Mic size={20} />}
       </button>
-      {/* Show recording indicator only when listening */}
-      {isListening && <span className="text-sm text-white/80 animate-pulse">🎙️ Recording... (click mic to stop)</span>}
-      {/* Display error message if any */}
+      {isListening && (
+        <span className="text-sm text-white/80 animate-pulse">🎙️ Recording... (click mic to stop)</span>
+      )}
       {error && <span className="text-xs text-red-500">{error}</span>}
-      {/* Extra hint for iOS users when no error is present */}
       {isIOS && !error && (
-        <span className="text-xs text-orange-600">⚠️ On iPhone, voice input may be limited. Typing works well.</span>
+        <span className="text-xs text-orange-600">
+          ⚠️ On iPhone, voice input may be limited.
+        </span>
       )}
     </div>
   );
